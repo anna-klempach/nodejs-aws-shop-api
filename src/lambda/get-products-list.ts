@@ -5,7 +5,7 @@ export const handler = async () => {
     const products = await ProductsService.getProducts();
     return buildResponse(200, products);
   }
-  catch (error) {
-    return buildResponse(404, { message: 'Unable to send products list.' });
+  catch ({ error, message }: any) {
+    return buildResponse(error || 404, { message: message || 'Unable to get products list.' });
   }
 };

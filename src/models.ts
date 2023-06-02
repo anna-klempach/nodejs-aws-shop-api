@@ -8,6 +8,12 @@ export type Product = {
   title: string
 };
 
+export type GetProductsByIdEvent = {
+  pathParameters: {
+    productId: string
+  }
+};
+
 const PRODUCT_PROPERTIES = {
   id: { type: JsonSchemaType.STRING },
   title: { type: JsonSchemaType.STRING },

@@ -8,6 +8,7 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
+    "test:dev": "jest --watch",
     "cdk": "cdk",
     "cdk:deploy": "npx cdk deploy --profile HKL",
     "cdk:bootstrap": "npx cdk bootstrap --profile HKL"

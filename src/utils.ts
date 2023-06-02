@@ -1,3 +1,5 @@
+import * as apigw from 'aws-cdk-lib/aws-apigateway';
+
 export function buildResponse<T>(statusCode: number, body: T) {
   return {
     statusCode,
@@ -9,3 +11,9 @@ export function buildResponse<T>(statusCode: number, body: T) {
     body: JSON.stringify(body)
   }
 }
+
+export const CORS_PREFLIGHT_SETTINGS = {
+  allowOrigins: ['*'],
+  allowHeaders: ['*'],
+  allowMethods: apigw.Cors.ALL_METHODS
+};

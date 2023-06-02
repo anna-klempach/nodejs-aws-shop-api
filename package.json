@@ -9,8 +9,8 @@
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
-    "cdk:deploy": "npx cdk deploy --profile Hanna",
-    "cdk:bootstrap": "npx cdk bootstrap --profile Hanna"
+    "cdk:deploy": "npx cdk deploy --profile HKL",
+    "cdk:bootstrap": "npx cdk bootstrap --profile HKL"
   },
   "devDependencies": {
     "@types/jest": "^29.5.1",

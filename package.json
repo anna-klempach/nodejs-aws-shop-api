@@ -11,7 +11,8 @@
     "test:dev": "jest --watch",
     "cdk": "cdk",
     "cdk:deploy": "npx cdk deploy --profile HKL",
-    "cdk:bootstrap": "npx cdk bootstrap --profile HKL"
+    "cdk:bootstrap": "npx cdk bootstrap --profile HKL",
+    "db:write": "aws --profile HKL dynamodb batch-write-item --request-items file://src/data.json"
   },
   "devDependencies": {
     "@types/jest": "^29.5.1",

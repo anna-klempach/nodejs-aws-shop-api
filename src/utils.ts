@@ -24,11 +24,11 @@ export const CORS_PREFLIGHT_SETTINGS = {
 };
 
 export const PRODUCTS_SCAN_INPUT = {
-  TableName: "products",
+  TableName: process.env.PRODUCTS_TABLE_NAME,
 };
 
 export const STOCKS_SCAN_INPUT = {
-  TableName: "stocks",
+  TableName: process.env.STOCKS_TABLE_NAME,
 };
 
 export const getTransactItemInput = (productId: string): TransactGetItemsCommandInput => {

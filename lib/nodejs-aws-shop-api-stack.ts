@@ -2,24 +2,48 @@ import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import { Construct } from 'constructs';
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { ErrorSchema, ProductListSchema, ProductSchema } from '../src/models';
 import { CORS_PREFLIGHT_SETTINGS } from '../src/utils';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as dotenv from 'dotenv';
 
+dotenv.config();
 
 export class NodejsAwsShopApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const tableReadRole = new iam.Role(this, 'LambdaDynamoDBReadRole', {
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+    });
+
+    const readPolicyStatement = new iam.PolicyStatement({
+      actions: ['dynamodb:GetItem', 'dynamodb:Scan'],
+      resources: [process.env.STOCKS_TABLE_ARN || '', process.env.PRODUCTS_TABLE_ARN || ''],
+    });
+    tableReadRole.addToPolicy(readPolicyStatement);
+
+    const COMMON_LAMBDA_PROPS: Partial<NodejsFunctionProps> = {
+      runtime: lambda.Runtime.NODEJS_18_X,
+      timeout: cdk.Duration.seconds(300),
+      role: tableReadRole,
+      environment: {
+        PRODUCTS_TABLE_NAME: process.env.PRODUCTS_TABLE_NAME || '',
+        STOCKS_TABLE_NAME: process.env.STOCKS_TABLE_NAME || '',
+        REGION: process.env.REGION || ''
+      }
+    }
     const getProductsList = new NodejsFunction(this, 'GetProductsListHandler', {
       functionName: 'getProductsList',
-      runtime: lambda.Runtime.NODEJS_18_X,
-      entry: 'src/lambda/get-products-list.ts'
+      entry: 'src/lambda/get-products-list.ts',
+      ...COMMON_LAMBDA_PROPS
     });
 
     const getProductsById = new NodejsFunction(this, 'GetProductsByIdHandler', {
       functionName: 'getProductsById',
-      runtime: lambda.Runtime.NODEJS_18_X,
-      entry: 'src/lambda/get-products-by-id.ts'
+      entry: 'src/lambda/get-products-by-id.ts',
+      ...COMMON_LAMBDA_PROPS
     });
 
     const api = new apigw.RestApi(this, 'products-api', {

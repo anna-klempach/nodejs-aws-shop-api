@@ -1,5 +1,6 @@
-import { DynamoDBClient, TransactGetItemsCommand, ScanCommand, TransactGetItemsCommandOutput } from "@aws-sdk/client-dynamodb";
-import { PRODUCTS_SCAN_INPUT, STOCKS_SCAN_INPUT, getTransactItemInput, joinData, joinDataList } from './utils';
+import { DynamoDBClient, TransactGetItemsCommand, ScanCommand, TransactWriteItemsCommand } from "@aws-sdk/client-dynamodb";
+import { PRODUCTS_SCAN_INPUT, STOCKS_SCAN_INPUT, getTransactItemInput, getTransactWriteItemsInput, joinData, joinDataList } from './utils';
+import { ProductBase } from './models';
 const client = new DynamoDBClient({ region: process.env.REGION });
 
 export default {
@@ -38,6 +39,15 @@ export default {
       const productData = productsResponse.Items || [];
       const stockData = stocksResponse.Items || [];
       return joinDataList(productData, stockData);
+    }
+    catch (e) {
+      throw e;
+    }
+  },
+  createProduct: async (product: ProductBase) => {
+    try {
+      const transactionCommand = new TransactWriteItemsCommand(getTransactWriteItemsInput(product));
+      await client.send(transactionCommand);
     }
     catch (e) {
       throw e;

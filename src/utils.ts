@@ -1,5 +1,7 @@
-import { AttributeValue, TransactGetItemsCommandInput } from '@aws-sdk/client-dynamodb';
+import { AttributeValue, TransactGetItemsCommandInput, TransactWriteItemsCommandInput } from '@aws-sdk/client-dynamodb';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
+import { ProductBase } from './models';
+const { v4: uuidv4 } = require('uuid');
 
 export const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -73,4 +75,33 @@ export const joinData = (product: Record<string, AttributeValue>, stock?: Record
   price: Number(product.price.N),
   count: stock ? Number(stock.count.N) : 0,
 });
+
+export const getTransactWriteItemsInput = (value: ProductBase): TransactWriteItemsCommandInput => {
+  const { count, description = '', price, title } = value;
+  const uuid = uuidv4();
+  return {
+    TransactItems: [
+      {
+        Put: {
+          TableName: process.env.PRODUCTS_TABLE_NAME,
+          Item: {
+            id: { S: uuid },
+            title: { S: title },
+            description: { S: description },
+            price: { N: price.toString() },
+          },
+        },
+      },
+      {
+        Put: {
+          TableName: process.env.STOCKS_TABLE_NAME,
+          Item: {
+            product_id: { S: uuid },
+            count: { N: count.toString() },
+          },
+        },
+      },
+    ],
+  };
+}
 

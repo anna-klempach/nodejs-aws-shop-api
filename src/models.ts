@@ -32,7 +32,7 @@ const PRODUCT_PROPERTIES = {
 export const ProductBaseSchema = {
   type: JsonSchemaType.OBJECT,
   properties: PRODUCT_PROPERTIES_BASE,
-  required: ['title', 'count', 'price']
+  required: ['title', 'count', 'price', 'description']
 }
 
 export const ProductSchema = {

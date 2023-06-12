@@ -1,8 +1,11 @@
+import { errorHandler } from '../middleware/error-handler';
+import { eventLogger } from '../middleware/event-logger';
 import ProductsService from '../products-service';
 import { productBaseSchema } from '../schemas';
 import { buildResponse } from '../utils';
+import middy from '@middy/core';
 
-export const handler = async (request: { body: string }) => {
+const createProductHandler = async (request: { body: string }) => {
   try {
     const product = JSON.parse(request.body);
     const { error } = productBaseSchema.validate(product);
@@ -16,3 +19,7 @@ export const handler = async (request: { body: string }) => {
     return buildResponse(error, { message });
   }
 };
+
+export const handler = middy(createProductHandler as any)
+  .use(eventLogger())
+  .use(errorHandler());

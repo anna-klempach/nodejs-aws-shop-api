@@ -4,6 +4,7 @@ import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import { Construct } from 'constructs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as dotenv from 'dotenv';
+import * as s3notifocations from 'aws-cdk-lib/aws-s3-notifications';
 import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { CORS_PREFLIGHT_SETTINGS } from '../src/utils';
 import { ErrorSchema } from '../src/models';
@@ -76,5 +77,15 @@ export class ImportServiceStack extends cdk.Stack {
         }
       ]
     });
+
+    const importFileParser = new NodejsFunction(this, 'ImportFileParserHandler', {
+      functionName: 'importFileParser',
+      entry: 'src/lambda/import-file-parser.ts',
+      ...COMMON_LAMBDA_PROPS
+    });
+
+    bucket.grantRead(importFileParser);
+
+    bucket.addEventNotification(s3.EventType.OBJECT_CREATED, new s3notifocations.LambdaDestination(importFileParser));
   }
 }

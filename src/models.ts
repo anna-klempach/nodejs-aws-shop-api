@@ -1,11 +1,14 @@
 import { JsonSchemaType } from "aws-cdk-lib/aws-apigateway";
 
-export type Product = {
+export type ProductBase = {
   count: number,
   description: string,
-  id: string,
   price: number,
   title: string
+}
+
+export type Product = ProductBase & {
+  id: string
 };
 
 export type GetProductsByIdEvent = {
@@ -14,13 +17,23 @@ export type GetProductsByIdEvent = {
   }
 };
 
-const PRODUCT_PROPERTIES = {
-  id: { type: JsonSchemaType.STRING },
+const PRODUCT_PROPERTIES_BASE = {
   title: { type: JsonSchemaType.STRING },
   description: { type: JsonSchemaType.STRING },
   count: { type: JsonSchemaType.NUMBER, minimum: 0 },
   price: { type: JsonSchemaType.NUMBER, minimum: 0 }
+}
+
+const PRODUCT_PROPERTIES = {
+  ...PRODUCT_PROPERTIES_BASE,
+  id: { type: JsonSchemaType.STRING }
 };
+
+export const ProductBaseSchema = {
+  type: JsonSchemaType.OBJECT,
+  properties: PRODUCT_PROPERTIES_BASE,
+  required: ['title', 'count', 'price', 'description']
+}
 
 export const ProductSchema = {
   type: JsonSchemaType.OBJECT,

@@ -1,6 +1,10 @@
+import { errorHandler } from '../middleware/error-handler';
+import { eventLogger } from '../middleware/event-logger';
 import ProductsService from '../products-service';
 import { buildResponse } from '../utils';
-export const handler = async () => {
+import middy from '@middy/core';
+
+const getProductsListHandler = async () => {
   try {
     const products = await ProductsService.getProducts();
     return buildResponse(200, products);
@@ -9,3 +13,7 @@ export const handler = async () => {
     return buildResponse(error || 404, { message: message || 'Unable to get products list.' });
   }
 };
+
+export const handler = middy(getProductsListHandler as any)
+  .use(eventLogger())
+  .use(errorHandler());

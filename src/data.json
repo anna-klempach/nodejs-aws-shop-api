@@ -1,0 +1,216 @@
+{
+  "products": [
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "7567ec4b-b10c-48c5-9345-fc73c48a80aa"
+          },
+          "title": {
+            "S": "Spiderman Suit (blue)"
+          },
+          "description": {
+            "S": "Spiderman Suit in color blue. Can throw web and stick to the walls. Hypoallergenic."
+          },
+          "price": {
+            "N": "249.99"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "7567ec4b-b10c-48c5-9345-fc73c48a80a0"
+          },
+          "title": {
+            "S": "Spiderman Suit (black)"
+          },
+          "description": {
+            "S": "Spiderman Suit in color black. Can throw web and stick to the walls. Hypoallergenic."
+          },
+          "price": {
+            "N": "269.99"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "7567ec4b-b10c-48c5-9345-fc73c48a80a1"
+          },
+          "title": {
+            "S": "Captain America's Shield"
+          },
+          "description": {
+            "S": "Shield made from Vibranium. Provides high protection from standard weapons, energy-based weapons powered by the Tesseract."
+          },
+          "price": {
+            "N": "159.99"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "7567ec4b-b10c-48c5-9345-fc73c48a80a2"
+          },
+          "title": {
+            "S": "Mjölnir"
+          },
+          "description": {
+            "S": "The hammer of the thunder god Thor. Can be used as a devastating weapon and as a divine instrument to provide blessings."
+          },
+          "price": {
+            "N": "259.99"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "7567ec4b-b10c-48c5-9345-fc73c48a80a3"
+          },
+          "title": {
+            "S": "Mark L"
+          },
+          "description": {
+            "S": "Known as the Bleeding Edge armor. Has rocket thrusters that allows to travel in deep space. Has the ability to form around the owner using nanotechnology. Can regenerate itself if it sustains damage."
+          },
+          "price": {
+            "N": "1099.99"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "7567ec4b-b10c-48c5-9345-fc73348a80a4"
+          },
+          "title": {
+            "S": "Hawkeye's Bow and Quiver"
+          },
+          "description": {
+            "S": "A pair of specialized tools used by former S.H.I.E.L.D. agent and Avenger, Hawkeye. Serving as his primary weapons, Hawkeye carries a unique, collapsible recurve bow along with a mechanized quiver that stores and deploys his trick arrows."
+          },
+          "price": {
+            "N": "99.99"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "7567ec4b-b10c-48c5-9445-fc73c48a80a5"
+          },
+          "title": {
+            "S": "Cloak of Levitation"
+          },
+          "description": {
+            "S": "A magical relic that is able to move and fly on its own power, enabling its user to levitate and hover in the air."
+          },
+          "price": {
+            "N": "119.99"
+          }
+        }
+      }
+    }
+  ],
+  "stocks": [
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "7567ec4b-b10c-48c5-9445-fc73c48a80a5"
+          },
+          "count": {
+            "N": "2"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "7567ec4b-b10c-48c5-9345-fc73348a80a4"
+          },
+          "count": {
+            "N": "8"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "7567ec4b-b10c-48c5-9445-fc73c48a80a3"
+          },
+          "count": {
+            "N": "7"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "7567ec4b-b10c-48c5-9445-fc73c48a80a2"
+          },
+          "count": {
+            "N": "12"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "7567ec4b-b10c-48c5-9445-fc73c48a80a1"
+          },
+          "count": {
+            "N": "10"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "7567ec4b-b10c-48c5-9445-fc73c48a80a0"
+          },
+          "count": {
+            "N": "4"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "product_id": {
+            "S": "7567ec4b-b10c-48c5-9445-fc73c48a80aa"
+          },
+          "count": {
+            "N": "6"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, GetObjectCommandOutput } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, GetObjectCommandOutput, CopyObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { S3EventRecord } from 'aws-lambda';
 const csv = require('csv-parser');
@@ -24,7 +24,7 @@ export default {
             key: currObjectKey
           }
         } } = rec;
-        if (!currObjectKey.includes('uploaded')) {
+        if (!currObjectKey.includes(process.env.UPLOADED_FOLDER_NAME!)) {
           return Promise.resolve();
         }
 
@@ -44,12 +44,15 @@ export default {
           }))
             .on('data', (data: any) => {
               results.push(data);
-              resolve();
             })
-            .on('end', () => {
-              results.forEach((res) => {
-                console.log(`Parsed file: ${JSON.stringify(res)}`);
-              })
+            .on('end', async () => {
+              try {
+                handleStreamEnd(results, s3Bucket.name, currObjectKey);
+                resolve();
+              }
+              catch (e) {
+                reject(e);
+              }
             })
             .on('error', (error: Error) => {
               reject(error);
@@ -64,3 +67,39 @@ export default {
     }
   }
 }
+
+const handleStreamEnd = async (results: any[], bucketName: string, currObjectKey: string) => {
+  try {
+    logFiles(results);
+    await copyFileToParsedFolder(bucketName, currObjectKey);
+  }
+  catch (e) {
+    throw (e);
+  }
+};
+
+const logFiles = (results: any[]) => {
+  results.forEach((res) => {
+    console.log(`Parsed file: ${JSON.stringify(res)}`);
+  });
+};
+
+const copyFileToParsedFolder = async (bucketName: string, currObjectKey: string) => {
+  try {
+    const copyObjectCommand = new CopyObjectCommand({
+      Bucket: bucketName,
+      CopySource: `${bucketName}/${currObjectKey}`,
+      Key: currObjectKey.replace(process.env.UPLOADED_FOLDER_NAME!, process.env.PARSED_FOLDER_NAME!),
+    });
+    await s3Client.send(copyObjectCommand);
+
+    const deleteObjectCommand = new DeleteObjectCommand({
+      Bucket: bucketName,
+      Key: currObjectKey,
+    });
+    await s3Client.send(deleteObjectCommand);
+  }
+  catch (e) {
+    throw (e);
+  }
+};

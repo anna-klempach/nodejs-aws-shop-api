@@ -16,7 +16,9 @@ const COMMON_LAMBDA_PROPS: Partial<NodejsFunctionProps> = {
   timeout: cdk.Duration.seconds(300),
   environment: {
     CDK_DEFAULT_REGION: process.env.CDK_DEFAULT_REGION!,
-    UPLOAD_BUCKET_NAME: process.env.UPLOAD_BUCKET_NAME!
+    UPLOAD_BUCKET_NAME: process.env.UPLOAD_BUCKET_NAME!,
+    UPLOADED_FOLDER_NAME: process.env.UPLOADED_FOLDER_NAME!,
+    PARSED_FOLDER_NAME: process.env.PARSED_FOLDER_NAME!
   }
 };
 export class ImportServiceStack extends cdk.Stack {
@@ -84,7 +86,7 @@ export class ImportServiceStack extends cdk.Stack {
       ...COMMON_LAMBDA_PROPS
     });
 
-    bucket.grantRead(importFileParser);
+    bucket.grantReadWrite(importFileParser);
 
     bucket.addEventNotification(s3.EventType.OBJECT_CREATED, new s3notifocations.LambdaDestination(importFileParser));
   }

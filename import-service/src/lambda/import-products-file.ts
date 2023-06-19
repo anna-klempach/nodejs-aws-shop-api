@@ -4,7 +4,7 @@ import { buildResponse } from '../utils';
 export const handler = async (request: { queryStringParameters: { name: string } }) => {
   try {
     const { name } = request.queryStringParameters;
-    if (!name.includes('csv')) {
+    if (!name.toLowerCase().endsWith('.csv')) {
       throw ({ error: 400, message: 'Invalid file format' });
     }
     const signedUrl = await FileService.importFile(name);

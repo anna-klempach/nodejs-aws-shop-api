@@ -1,5 +1,5 @@
 import ProductsService from "../src/products-service";
-import { handler } from "../src/lambda/get-products-list";
+import { getProductsListHandler } from "../src/lambda/get-products-list";
 import { CORS_HEADERS } from "../src/utils";
 
 const expectedProducts = [{
@@ -25,7 +25,7 @@ describe('getProductsList', () => {
       headers: CORS_HEADERS,
       body: JSON.stringify(expectedProducts)
     };
-    const result = await handler();
+    const result = await getProductsListHandler();
     expect(result).toEqual(expectedResult);
   });
 
@@ -37,7 +37,7 @@ describe('getProductsList', () => {
       headers: CORS_HEADERS,
       body: JSON.stringify({ message: serviceError.message })
     };
-    const result = await handler();
+    const result = await getProductsListHandler();
     expect(result).toEqual(expectedResult);
   });
 
@@ -49,7 +49,7 @@ describe('getProductsList', () => {
       headers: CORS_HEADERS,
       body: JSON.stringify({ message: 'Unable to get products list.' })
     };
-    const result = await handler();
+    const result = await getProductsListHandler();
     expect(result).toEqual(expectedResult);
   });
 });

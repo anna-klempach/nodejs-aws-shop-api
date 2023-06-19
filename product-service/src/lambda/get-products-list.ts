@@ -4,7 +4,7 @@ import ProductsService from '../products-service';
 import { buildResponse } from '../utils';
 import middy from '@middy/core';
 
-const getProductsListHandler = async () => {
+export const getProductsListHandler = async () => {
   try {
     const products = await ProductsService.getProducts();
     return buildResponse(200, products);

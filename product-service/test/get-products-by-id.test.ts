@@ -1,5 +1,5 @@
 import ProductsService from "../src/products-service";
-import { handler } from "../src/lambda/get-products-by-id";
+import { getProductsByIdHandler } from "../src/lambda/get-products-by-id";
 import { CORS_HEADERS } from "../src/utils";
 import { GetProductsByIdEvent } from "../src/models";
 
@@ -25,7 +25,7 @@ describe('getProductsById', () => {
       headers: CORS_HEADERS,
       body: JSON.stringify(expectedProduct)
     };
-    const result = await handler(event);
+    const result = await getProductsByIdHandler(event);
     expect(result).toEqual(expectedResult);
   });
 
@@ -37,7 +37,7 @@ describe('getProductsById', () => {
       headers: CORS_HEADERS,
       body: JSON.stringify({ message: serviceError.message })
     };
-    const result = await handler(event);
+    const result = await getProductsByIdHandler(event);
     expect(result).toEqual(expectedResult);
   });
 });

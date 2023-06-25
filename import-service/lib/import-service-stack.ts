@@ -8,6 +8,7 @@ import * as s3notifocations from 'aws-cdk-lib/aws-s3-notifications';
 import { NodejsFunction, NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { CORS_PREFLIGHT_SETTINGS } from '../src/utils';
 import { ErrorSchema } from '../src/models';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 dotenv.config();
 
@@ -18,14 +19,15 @@ const COMMON_LAMBDA_PROPS: Partial<NodejsFunctionProps> = {
     CDK_DEFAULT_REGION: process.env.CDK_DEFAULT_REGION!,
     UPLOAD_BUCKET_NAME: process.env.UPLOAD_BUCKET_NAME!,
     UPLOADED_FOLDER_NAME: process.env.UPLOADED_FOLDER_NAME!,
-    PARSED_FOLDER_NAME: process.env.PARSED_FOLDER_NAME!
+    PARSED_FOLDER_NAME: process.env.PARSED_FOLDER_NAME!,
+    QUEUE_URL: process.env.QUEUE_URL!
   }
 };
 export class ImportServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
     const bucket = s3.Bucket.fromBucketName(this, 'ImportBucket', process.env.UPLOAD_BUCKET_NAME!);
-
+    const queue = sqs.Queue.fromQueueArn(this, 'ImportQueue', process.env.QUEUE_ARN!);
     const importProductsFile = new NodejsFunction(this, 'ImportProductsFileHandler', {
       functionName: 'importProductsFile',
       entry: 'src/lambda/import-products-file.ts',
@@ -85,6 +87,7 @@ export class ImportServiceStack extends cdk.Stack {
       entry: 'src/lambda/import-file-parser.ts',
       ...COMMON_LAMBDA_PROPS
     });
+    queue.grantSendMessages(importFileParser);
 
     bucket.grantReadWrite(importFileParser);
 

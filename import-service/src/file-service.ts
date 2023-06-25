@@ -1,10 +1,12 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, GetObjectCommandOutput, CopyObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { SQSClient, SendMessageBatchCommand } from '@aws-sdk/client-sqs';
 import { S3EventRecord } from 'aws-lambda';
 const csv = require('csv-parser');
 import { Readable } from 'stream';
 
 const s3Client = new S3Client({ region: process.env.CDK_DEFAULT_REGION });
+const sqsClient = new SQSClient({ region: process.env.CDK_DEFAULT_REGION });
 export default {
   importFile: async (fileName: string) => {
     try {
@@ -32,7 +34,7 @@ export default {
 
         const response = await s3Client.send(getObjectCommand);
         const readStream = response.Body as Readable;
-        const results: Array<any> = [];
+        const results: Array<string> = [];
         await new Promise<void>((resolve, reject) => {
           readStream.pipe(csv({
             mapValues: ({ header, value }: any) => {
@@ -42,12 +44,12 @@ export default {
               return value;
             }
           }))
-            .on('data', (data: any) => {
-              results.push(data);
+            .on('data', async (data: any) => {
+              results.push(JSON.stringify(data));
             })
             .on('end', async () => {
               try {
-                handleStreamEnd(results, s3Bucket.name, currObjectKey);
+                await handleStreamEnd(results, s3Bucket.name, currObjectKey);
                 resolve();
               }
               catch (e) {
@@ -68,24 +70,10 @@ export default {
   }
 }
 
-const handleStreamEnd = async (results: any[], bucketName: string, currObjectKey: string) => {
-  try {
-    logFiles(results);
-    await copyFileToParsedFolder(bucketName, currObjectKey);
-  }
-  catch (e) {
-    throw (e);
-  }
-};
 
-const logFiles = (results: any[]) => {
-  results.forEach((res) => {
-    console.log(`Parsed file: ${JSON.stringify(res)}`);
-  });
-};
-
-const copyFileToParsedFolder = async (bucketName: string, currObjectKey: string) => {
+const handleStreamEnd = async (results: string[], bucketName: string, currObjectKey: string) => {
   try {
+    await sendRecordsToSqs(results);
     const copyObjectCommand = new CopyObjectCommand({
       Bucket: bucketName,
       CopySource: `${bucketName}/${currObjectKey}`,
@@ -101,5 +89,22 @@ const copyFileToParsedFolder = async (bucketName: string, currObjectKey: string)
   }
   catch (e) {
     throw (e);
+  }
+};
+
+const sendRecordsToSqs = async (records: string[]) => {
+  try {
+    const entries = records.map((rec, i) => ({
+      Id: `Message${i + 1}`,
+      MessageBody: rec
+    }));
+    const command = new SendMessageBatchCommand({
+      QueueUrl: process.env.QUEUE_URL!,
+      Entries: entries
+    });
+    await sqsClient.send(command);
+    console.log(`Messages were successfully sent`);
+  } catch (error) {
+    throw ({ message: "Error sending message to SQS:", error });
   }
 };

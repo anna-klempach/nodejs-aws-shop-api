@@ -50,11 +50,11 @@ export default {
   },
   catalogBatchProducts: async (records: SQSRecord[]) => {
     try {
-      records.forEach(async (rec) => {
+      const promises = records.map(async (rec) => {
         const product = JSON.parse(rec.body);
-        console.log('product', product);
         await transactCreateProduct(product);
       });
+      await Promise.all(promises);
     }
     catch (e) {
       throw (e);
@@ -65,9 +65,10 @@ export default {
 const transactCreateProduct = async (product: ProductBase) => {
   try {
     const transactionCommand = new TransactWriteItemsCommand(getTransactWriteItemsInput(product));
-    await client.send(transactionCommand);
+    const response = await client.send(transactionCommand);
+    console.log(`Data was successfully added to DB: ${JSON.stringify(response)}`);
   }
-  catch (e) {
-    throw e;
+  catch (error) {
+    throw { message: 'Unable to write data to database', error };
   }
 };

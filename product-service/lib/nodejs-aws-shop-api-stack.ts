@@ -19,21 +19,21 @@ export class NodejsAwsShopApiStack extends cdk.Stack {
 
     const readPolicyStatement = new iam.PolicyStatement({
       actions: ['dynamodb:GetItem', 'dynamodb:Scan'],
-      resources: [process.env.STOCKS_TABLE_ARN || '', process.env.PRODUCTS_TABLE_ARN || ''],
+      resources: [process.env.STOCKS_TABLE_ARN!, process.env.PRODUCTS_TABLE_ARN!],
     });
 
     const writePolicyStatement = new iam.PolicyStatement({
       actions: ['dynamodb:PutItem', 'dynamodb:UpdateItem', 'dynamodb:DeleteItem', 'dynamodb:BatchWriteItem'],
-      resources: [process.env.STOCKS_TABLE_ARN || '', process.env.PRODUCTS_TABLE_ARN || ''],
+      resources: [process.env.STOCKS_TABLE_ARN!, process.env.PRODUCTS_TABLE_ARN!],
     });
 
     const COMMON_LAMBDA_PROPS: Partial<NodejsFunctionProps> = {
       runtime: lambda.Runtime.NODEJS_18_X,
       timeout: cdk.Duration.seconds(300),
       environment: {
-        PRODUCTS_TABLE_NAME: process.env.PRODUCTS_TABLE_NAME || '',
-        STOCKS_TABLE_NAME: process.env.STOCKS_TABLE_NAME || '',
-        REGION: process.env.REGION || ''
+        PRODUCTS_TABLE_NAME: process.env.PRODUCTS_TABLE_NAME!,
+        STOCKS_TABLE_NAME: process.env.STOCKS_TABLE_NAME!,
+        REGION: process.env.REGION!
       }
     }
     const getProductsList = new NodejsFunction(this, 'GetProductsListHandler', {
@@ -65,8 +65,11 @@ export class NodejsAwsShopApiStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(30)
     });
 
+    catalogBatchProcess.addToRolePolicy(writePolicyStatement);
+
     const catalogItemsQueue = new sqs.Queue(this, 'CatalogItemsQueue', {
-      queueName: 'catalog-items-queue'
+      queueName: 'catalog-items-queue',
+      visibilityTimeout: cdk.Duration.seconds(30)
     });
 
     catalogBatchProcess.addEventSource(new SqsEventSource(catalogItemsQueue, {

@@ -6,7 +6,7 @@ const middy = require('@middy/core');
 
 export const catalogBatchProcess = async (event: SQSEvent) => {
   try {
-    ProductsService.catalogBatchProducts(event.Records);
+    await ProductsService.catalogBatchProducts(event.Records);
   }
   catch ({ error, message }: any) {
     console.error(error, { message });

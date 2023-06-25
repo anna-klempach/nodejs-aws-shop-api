@@ -3,7 +3,7 @@ import { eventLogger } from '../middleware/event-logger';
 import { GetProductsByIdEvent } from '../models';
 import ProductsService from '../products-service';
 import { buildResponse } from '../utils';
-import middy from '@middy/core';
+const middy = require('@middy/core');
 
 export const getProductsByIdHandler = async (event: GetProductsByIdEvent) => {
   try {

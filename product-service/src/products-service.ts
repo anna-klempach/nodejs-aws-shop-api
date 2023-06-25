@@ -1,6 +1,7 @@
 import { DynamoDBClient, TransactGetItemsCommand, ScanCommand, TransactWriteItemsCommand } from "@aws-sdk/client-dynamodb";
 import { PRODUCTS_SCAN_INPUT, STOCKS_SCAN_INPUT, getTransactItemInput, getTransactWriteItemsInput, joinData, joinDataList } from './utils';
 import { ProductBase } from './models';
+import { SQSRecord } from "aws-lambda";
 const client = new DynamoDBClient({ region: process.env.REGION });
 
 export default {
@@ -45,12 +46,28 @@ export default {
     }
   },
   createProduct: async (product: ProductBase) => {
+    await transactCreateProduct(product);
+  },
+  catalogBatchProducts: async (records: SQSRecord[]) => {
     try {
-      const transactionCommand = new TransactWriteItemsCommand(getTransactWriteItemsInput(product));
-      await client.send(transactionCommand);
+      records.forEach(async (rec) => {
+        const product = JSON.parse(rec.body);
+        console.log('product', product);
+        await transactCreateProduct(product);
+      });
     }
     catch (e) {
-      throw e;
+      throw (e);
     }
   }
 }
+
+const transactCreateProduct = async (product: ProductBase) => {
+  try {
+    const transactionCommand = new TransactWriteItemsCommand(getTransactWriteItemsInput(product));
+    await client.send(transactionCommand);
+  }
+  catch (e) {
+    throw e;
+  }
+};

@@ -7,6 +7,9 @@ import { ErrorSchema, ProductBaseSchema, ProductListSchema, ProductSchema } from
 import { CORS_PREFLIGHT_SETTINGS } from '../src/utils';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as dotenv from 'dotenv';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 
 dotenv.config();
 
@@ -54,6 +57,21 @@ export class NodejsAwsShopApiStack extends cdk.Stack {
     });
 
     createProduct.addToRolePolicy(writePolicyStatement);
+
+    const catalogBatchProcess = new NodejsFunction(this, 'CatalogBatchProcess', {
+      functionName: 'catalogBatchProcess',
+      entry: 'src/lambda/catalog-batch-process.ts',
+      ...COMMON_LAMBDA_PROPS,
+      timeout: cdk.Duration.seconds(30)
+    });
+
+    const catalogItemsQueue = new sqs.Queue(this, 'CatalogItemsQueue', {
+      queueName: 'catalog-items-queue'
+    });
+
+    catalogBatchProcess.addEventSource(new SqsEventSource(catalogItemsQueue, {
+      batchSize: 5
+    }));
 
     const api = new apigw.RestApi(this, 'products-api', {
       restApiName: "Products Service",

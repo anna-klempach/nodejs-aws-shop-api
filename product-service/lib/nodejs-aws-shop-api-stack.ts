@@ -58,23 +58,39 @@ export class NodejsAwsShopApiStack extends cdk.Stack {
 
     createProduct.addToRolePolicy(writePolicyStatement);
 
-    const catalogBatchProcess = new NodejsFunction(this, 'CatalogBatchProcess', {
-      functionName: 'catalogBatchProcess',
-      entry: 'src/lambda/catalog-batch-process.ts',
-      ...COMMON_LAMBDA_PROPS,
-      timeout: cdk.Duration.seconds(30)
-    });
-
-    catalogBatchProcess.addToRolePolicy(writePolicyStatement);
-
     const catalogItemsQueue = new sqs.Queue(this, 'CatalogItemsQueue', {
       queueName: 'catalog-items-queue',
       visibilityTimeout: cdk.Duration.seconds(30)
     });
 
+    const createProductTopic = new sns.Topic(this, 'CreateProductTopic', {
+      topicName: 'create-product-topic'
+    });
+
+    const catalogBatchProcess = new NodejsFunction(this, 'CatalogBatchProcess', {
+      functionName: 'catalogBatchProcess',
+      entry: 'src/lambda/catalog-batch-process.ts',
+      ...COMMON_LAMBDA_PROPS,
+      environment: {
+        ...COMMON_LAMBDA_PROPS.environment,
+        CREATE_PRODUCT_TOPIC_ARN: createProductTopic.topicArn
+      },
+      timeout: cdk.Duration.seconds(30)
+    });
+
+    catalogBatchProcess.addToRolePolicy(writePolicyStatement);
+
     catalogBatchProcess.addEventSource(new SqsEventSource(catalogItemsQueue, {
       batchSize: 5
     }));
+
+    createProductTopic.grantPublish(catalogBatchProcess);
+
+    new sns.Subscription(this, 'EmailSubscription', {
+      endpoint: process.env.EMAIL_ADDRESS!,
+      protocol: sns.SubscriptionProtocol.EMAIL,
+      topic: createProductTopic
+    });
 
     const api = new apigw.RestApi(this, 'products-api', {
       restApiName: "Products Service",

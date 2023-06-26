@@ -67,6 +67,18 @@ export class NodejsAwsShopApiStack extends cdk.Stack {
       topicName: 'create-product-topic'
     });
 
+    const createProductFilterPolicyGreaterThanThree = {
+      count: sns.SubscriptionFilter.numericFilter({
+        greaterThan: 3
+      }),
+    };
+
+    const createProductFilterPolicyLessThanThree = {
+      count: sns.SubscriptionFilter.numericFilter({
+        lessThanOrEqualTo: 3
+      })
+    };
+
     const catalogBatchProcess = new NodejsFunction(this, 'CatalogBatchProcess', {
       functionName: 'catalogBatchProcess',
       entry: 'src/lambda/catalog-batch-process.ts',
@@ -86,10 +98,18 @@ export class NodejsAwsShopApiStack extends cdk.Stack {
 
     createProductTopic.grantPublish(catalogBatchProcess);
 
-    new sns.Subscription(this, 'EmailSubscription', {
+    new sns.Subscription(this, 'EmailLessOrEqualSubscription', {
       endpoint: process.env.EMAIL_ADDRESS!,
       protocol: sns.SubscriptionProtocol.EMAIL,
-      topic: createProductTopic
+      topic: createProductTopic,
+      filterPolicy: createProductFilterPolicyLessThanThree
+    });
+
+    new sns.Subscription(this, 'EmailGreaterSubscription', {
+      endpoint: process.env.EMAIL_ADDRESS_FOR_GREATER_FILTER!,
+      protocol: sns.SubscriptionProtocol.EMAIL,
+      topic: createProductTopic,
+      filterPolicy: createProductFilterPolicyGreaterThanThree
     });
 
     const api = new apigw.RestApi(this, 'products-api', {

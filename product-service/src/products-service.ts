@@ -55,9 +55,9 @@ export default {
       const promises = records.map(async (rec) => {
         const product = JSON.parse(rec.body);
         await transactCreateProduct(product);
+        await sendSnsNotification(product);
       });
       await Promise.all(promises);
-      await sendSnsNotification(records.length);
     }
     catch (e) {
       throw (e);
@@ -76,10 +76,17 @@ const transactCreateProduct = async (product: ProductBase) => {
   }
 };
 
-const sendSnsNotification = async (count: number) => {
+const sendSnsNotification = async (product: ProductBase) => {
   const snsCommand = new PublishCommand({
     TopicArn: process.env.CREATE_PRODUCT_TOPIC_ARN!,
-    Message: `Successfully created ${count} entries in database.`
+    Message: `Successfully created ${product.title}: (${product.description}) entry in database.`,
+    Subject: 'Product added to catalog',
+    MessageAttributes: {
+      count: {
+        DataType: 'Number',
+        StringValue: product.count.toString()
+      }
+    }
   });
   await snsClient.send(snsCommand);
 };

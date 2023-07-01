@@ -77,6 +77,7 @@ export const joinData = (product: Record<string, AttributeValue>, stock?: Record
 });
 
 export const getTransactWriteItemsInput = (value: ProductBase): TransactWriteItemsCommandInput => {
+  console.log({ value })
   const { count, description = '', price, title } = value;
   const uuid = uuidv4();
   return {

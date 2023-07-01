@@ -1,21 +1,21 @@
 import { errorHandler } from '../middleware/error-handler';
 import { eventLogger } from '../middleware/event-logger';
-import { GetProductsByIdEvent } from '../models';
+import { SQSEvent } from 'aws-lambda';
 import ProductsService from '../products-service';
 import { buildResponse } from '../utils';
 const middy = require('@middy/core');
 
-export const getProductsByIdHandler = async (event: GetProductsByIdEvent) => {
+export const catalogBatchProcess = async (event: SQSEvent) => {
   try {
-    const { productId } = event.pathParameters;
-    const product = await ProductsService.getProductById(productId);
-    return buildResponse(200, product);
+    const records = event.Records;
+    await ProductsService.catalogBatchProducts(records);
+    return buildResponse(200, `${records.length} products successfully added to catalog.`);
   }
   catch ({ error, message }: any) {
     return buildResponse(error, { message });
   }
 };
 
-export const handler = middy(getProductsByIdHandler as any)
+export const handler = middy(catalogBatchProcess as any)
   .use(eventLogger())
   .use(errorHandler());

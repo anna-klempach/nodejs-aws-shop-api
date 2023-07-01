@@ -7,6 +7,9 @@ import { ErrorSchema, ProductBaseSchema, ProductListSchema, ProductSchema } from
 import { CORS_PREFLIGHT_SETTINGS } from '../src/utils';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as dotenv from 'dotenv';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 
 dotenv.config();
 
@@ -16,21 +19,21 @@ export class NodejsAwsShopApiStack extends cdk.Stack {
 
     const readPolicyStatement = new iam.PolicyStatement({
       actions: ['dynamodb:GetItem', 'dynamodb:Scan'],
-      resources: [process.env.STOCKS_TABLE_ARN || '', process.env.PRODUCTS_TABLE_ARN || ''],
+      resources: [process.env.STOCKS_TABLE_ARN!, process.env.PRODUCTS_TABLE_ARN!],
     });
 
     const writePolicyStatement = new iam.PolicyStatement({
       actions: ['dynamodb:PutItem', 'dynamodb:UpdateItem', 'dynamodb:DeleteItem', 'dynamodb:BatchWriteItem'],
-      resources: [process.env.STOCKS_TABLE_ARN || '', process.env.PRODUCTS_TABLE_ARN || ''],
+      resources: [process.env.STOCKS_TABLE_ARN!, process.env.PRODUCTS_TABLE_ARN!],
     });
 
     const COMMON_LAMBDA_PROPS: Partial<NodejsFunctionProps> = {
       runtime: lambda.Runtime.NODEJS_18_X,
       timeout: cdk.Duration.seconds(300),
       environment: {
-        PRODUCTS_TABLE_NAME: process.env.PRODUCTS_TABLE_NAME || '',
-        STOCKS_TABLE_NAME: process.env.STOCKS_TABLE_NAME || '',
-        REGION: process.env.REGION || ''
+        PRODUCTS_TABLE_NAME: process.env.PRODUCTS_TABLE_NAME!,
+        STOCKS_TABLE_NAME: process.env.STOCKS_TABLE_NAME!,
+        REGION: process.env.REGION!
       }
     }
     const getProductsList = new NodejsFunction(this, 'GetProductsListHandler', {
@@ -54,6 +57,60 @@ export class NodejsAwsShopApiStack extends cdk.Stack {
     });
 
     createProduct.addToRolePolicy(writePolicyStatement);
+
+    const catalogItemsQueue = new sqs.Queue(this, 'CatalogItemsQueue', {
+      queueName: 'catalog-items-queue',
+      visibilityTimeout: cdk.Duration.seconds(30)
+    });
+
+    const createProductTopic = new sns.Topic(this, 'CreateProductTopic', {
+      topicName: 'create-product-topic'
+    });
+
+    const createProductFilterPolicyGreaterThanThree = {
+      count: sns.SubscriptionFilter.numericFilter({
+        greaterThan: 3
+      }),
+    };
+
+    const createProductFilterPolicyLessThanThree = {
+      count: sns.SubscriptionFilter.numericFilter({
+        lessThanOrEqualTo: 3
+      })
+    };
+
+    const catalogBatchProcess = new NodejsFunction(this, 'CatalogBatchProcess', {
+      functionName: 'catalogBatchProcess',
+      entry: 'src/lambda/catalog-batch-process.ts',
+      ...COMMON_LAMBDA_PROPS,
+      environment: {
+        ...COMMON_LAMBDA_PROPS.environment,
+        CREATE_PRODUCT_TOPIC_ARN: createProductTopic.topicArn
+      },
+      timeout: cdk.Duration.seconds(30)
+    });
+
+    catalogBatchProcess.addToRolePolicy(writePolicyStatement);
+
+    catalogBatchProcess.addEventSource(new SqsEventSource(catalogItemsQueue, {
+      batchSize: 5
+    }));
+
+    createProductTopic.grantPublish(catalogBatchProcess);
+
+    new sns.Subscription(this, 'EmailLessOrEqualSubscription', {
+      endpoint: process.env.EMAIL_ADDRESS!,
+      protocol: sns.SubscriptionProtocol.EMAIL,
+      topic: createProductTopic,
+      filterPolicy: createProductFilterPolicyLessThanThree
+    });
+
+    new sns.Subscription(this, 'EmailGreaterSubscription', {
+      endpoint: process.env.EMAIL_ADDRESS_FOR_GREATER_FILTER!,
+      protocol: sns.SubscriptionProtocol.EMAIL,
+      topic: createProductTopic,
+      filterPolicy: createProductFilterPolicyGreaterThanThree
+    });
 
     const api = new apigw.RestApi(this, 'products-api', {
       restApiName: "Products Service",

@@ -2,7 +2,7 @@ import { errorHandler } from '../middleware/error-handler';
 import { eventLogger } from '../middleware/event-logger';
 import ProductsService from '../products-service';
 import { buildResponse } from '../utils';
-import middy from '@middy/core';
+const middy = require('@middy/core');
 
 export const getProductsListHandler = async () => {
   try {

@@ -1,7 +1,10 @@
-import { DynamoDBClient, TransactGetItemsCommand, ScanCommand, TransactWriteItemsCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, TransactGetItemsCommand, ScanCommand, TransactWriteItemsCommand } from '@aws-sdk/client-dynamodb';
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 import { PRODUCTS_SCAN_INPUT, STOCKS_SCAN_INPUT, getTransactItemInput, getTransactWriteItemsInput, joinData, joinDataList } from './utils';
 import { ProductBase } from './models';
+import { SQSRecord } from 'aws-lambda';
 const client = new DynamoDBClient({ region: process.env.REGION });
+const snsClient = new SNSClient({ region: process.env.REGION });
 
 export default {
   getProductById: async (id: string) => {
@@ -45,12 +48,45 @@ export default {
     }
   },
   createProduct: async (product: ProductBase) => {
+    await transactCreateProduct(product);
+  },
+  catalogBatchProducts: async (records: SQSRecord[]) => {
     try {
-      const transactionCommand = new TransactWriteItemsCommand(getTransactWriteItemsInput(product));
-      await client.send(transactionCommand);
+      const promises = records.map(async (rec) => {
+        const product = JSON.parse(rec.body);
+        await transactCreateProduct(product);
+        await sendSnsNotification(product);
+      });
+      await Promise.all(promises);
     }
     catch (e) {
-      throw e;
+      throw (e);
     }
   }
 }
+
+const transactCreateProduct = async (product: ProductBase) => {
+  try {
+    const transactionCommand = new TransactWriteItemsCommand(getTransactWriteItemsInput(product));
+    const response = await client.send(transactionCommand);
+    console.log(`Data was successfully added to DB: ${JSON.stringify(response)}`);
+  }
+  catch (error) {
+    throw { message: 'Unable to write data to database', error };
+  }
+};
+
+const sendSnsNotification = async (product: ProductBase) => {
+  const snsCommand = new PublishCommand({
+    TopicArn: process.env.CREATE_PRODUCT_TOPIC_ARN!,
+    Message: `Successfully created ${product.title}: (${product.description}) entry in database.`,
+    Subject: 'Product added to catalog',
+    MessageAttributes: {
+      count: {
+        DataType: 'Number',
+        StringValue: product.count.toString()
+      }
+    }
+  });
+  await snsClient.send(snsCommand);
+};

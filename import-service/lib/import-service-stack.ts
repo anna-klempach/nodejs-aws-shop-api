@@ -56,12 +56,20 @@ export class ImportServiceStack extends cdk.Stack {
 
     importApi.addCorsPreflight(CORS_PREFLIGHT_SETTINGS);
 
+
+    const lambdaAuthorizer = lambda.Function.fromFunctionArn(this, 'BasicAuthorizer', process.env.LAMBDA_AUTHORIZER_ARN!);
+    const authorizer = new apigw.RequestAuthorizer(this, 'BasicLambdaAuthorizer', {
+      handler: lambdaAuthorizer,
+      identitySources: [apigw.IdentitySource.header('Authorization')]
+    });
+
     const importFileValidator = api.addRequestValidator('ImportFileRequestValidator', {
       validateRequestParameters: true,
       validateRequestBody: false,
     });
 
     importApi.addMethod('GET', importProductsFileIntegration, {
+      authorizer,
       requestParameters: {
         'method.request.querystring.name': true
       },
@@ -87,6 +95,7 @@ export class ImportServiceStack extends cdk.Stack {
       entry: 'src/lambda/import-file-parser.ts',
       ...COMMON_LAMBDA_PROPS
     });
+
     queue.grantSendMessages(importFileParser);
 
     bucket.grantReadWrite(importFileParser);
